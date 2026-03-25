@@ -1,257 +1,70 @@
 # ZeroConnectWallet
 
-A read-only Firefox extension that mimics MetaMask's EIP-1193 provider API. Connect to DeFi applications without storing private keys - perfect for viewing balances and portfolio tracking.
+A read-only Firefox extension that mimics MetaMask for connecting to DeFi apps without storing private keys.
 
-## Features
-
-- **Read-Only Wallet**: No private keys stored, ever
-- **MetaMask Compatible**: Injects `window.ethereum` provider that works with most dApps
-- **Multiple Addresses**: Configure one or many addresses
-- **Firefox Sync**: Settings sync across devices via Firefox Account
-- **Address Auto-Select**: Remembers your last connected address
-- **Chain Support**: Ethereum, Polygon, Arbitrum, Optimism, Base, and Sepolia
-- **Signing Notifications**: Shows notification when dApp tries to sign (rejected)
-
-## Installation
-
-### From GitHub Releases (Signed)
-
-> **Note:** The XPI files in releases are signed by Mozilla Add-ons and work in standard Firefox.
-
-1. Download the latest `zeroconnect-wallet-vX.X.X.xpi` from the [Releases](../../releases) page
-2. Open Firefox and navigate to `about:addons`
-3. Click the gear icon → "Install Add-on From File"
-4. Select the downloaded `.xpi` file
-5. Click "Add" when prompted
-
-### For Developers - Load Temporarily (Unsigned)
-
-For testing unsigned builds during development:
-
-1. Go to `about:debugging` in Firefox
-2. Click "This Firefox" → "Load Temporary Add-on"
-3. Select the `dist/manifest.json` file
-
-### From Source (Developer Mode)
-
-1. Clone or download this repository
-2. Run `bun install` to install dependencies
-3. Run `just build` to build the extension
-4. Open Firefox and navigate to `about:debugging`
-5. Click "This Firefox" → "Load Temporary Add-on"
-6. Select the `dist/manifest.json` file
-
-### Development
+## Quick Start
 
 ```bash
 # Install dependencies
 bun install
 
-# Build for production
-just build
-
-# Watch mode (auto-rebuild on changes)
+# Run in development mode
 just dev
 
-# Type check
-just typecheck
-
-# Lint and format check
-just check
-
-# Fix lint and format issues
-just fix
-
-# Full CI check
-just ci
+# Ship a new release
+just ship 1.0.3
 ```
 
-## Usage
+## Installation
 
-### Current Implementation (Hardcoded Address)
-
-This version uses a hardcoded address for immediate testing:
-- **Address:** `0x8364f08a5b8737f07BE54b982A2089Cf70d73966`
-- No configuration needed - works out of the box
-
-**To use:**
-1. Install the extension
-2. Visit any DeFi application (e.g., Uniswap, Aave, Compound)
-3. Click "Connect Wallet"
-4. The extension automatically connects with the hardcoded address
-
-### Planned Features
-
-The popup UI includes configuration features for future releases:
-- Custom address configuration
-- Network selection (Ethereum, Polygon, Arbitrum, etc.)
-- Custom RPC endpoints
-- Firefox Sync support
-
-### What Works
-
-- Viewing balances and portfolio data
-- Reading transaction history
-- Viewing position information
-- Network switching
-
-### What Doesn't Work (By Design)
-
-- Sending transactions
-- Signing messages
-- Approving token spend limits
-- Any operation requiring a private key
-
-When a dApp tries to initiate a transaction, you'll see a notification explaining that ZeroConnectWallet is read-only.
-
-## How It Works
-
-### Architecture
-
-1. **Content Script** (`content/index.js`): Injected into all web pages
-2. **Provider** (`content/provider.ts`): Implements EIP-1193 standard
-3. **Injected Script** (`content/injected.js`): Runs in page context, exposes `window.ethereum`
-4. **Background Script** (`background/index.js`): Manages state and RPC forwarding
-5. **Popup** (`popup/`): Configuration UI and address selector
-
-### Storage
-
-- Uses `browser.storage.sync` (Firefox Sync) for cross-device settings
-- Falls back to `browser.storage.local` if sync unavailable
-- Stores: addresses, chainId, rpcUrl, lastConnectedAddress
-
-### Firefox Sync
-
-**Requirements for sync to work:**
-1. Sign into Firefox Account on all devices
-2. Enable Sync in Firefox settings
-3. Install the extension on each device
-4. Configure addresses on one device
-
-**Important:** When you remove the extension, Firefox deletes all its data (including synced data). This is expected behavior for privacy/security. To keep your configuration:
-- Don't remove the extension, just disable it
-- Or note down your configured addresses before removing
-
-**Debugging sync issues:**
-- Check browser console for "Config: Sync storage result" logs
-- Verify you're signed into Firefox Account
-- Check `about:preferences#sync` to ensure sync is enabled
-
-### Security
-
-- No private keys, seed phrases, or secrets stored
-- Read-only RPC calls forwarded to public endpoints
-- All signing requests rejected with user notification
-- CSP-compliant code injection
-
-## Configuration
-
-### Supported Networks
-
-| Chain | Chain ID | Default RPC |
-|-------|----------|-------------|
-| Ethereum Mainnet | 0x1 | https://eth.llamarpc.com |
-| Sepolia Testnet | 0xaa36a7 | Public endpoint |
-| Polygon | 0x89 | Public endpoint |
-| Arbitrum One | 0xa4b1 | Public endpoint |
-| Optimism | 0xa | Public endpoint |
-| Base | 0x2105 | Public endpoint |
-
-### Custom RPC
-
-You can specify your own RPC endpoint for better performance or privacy:
-- Alchemy: `https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY`
-- Infura: `https://mainnet.infura.io/v3/YOUR_PROJECT_ID`
-- QuickNode: `https://YOUR_SUBDOMAIN.quiknode.pro/YOUR_TOKEN/`
-
-## Project Structure
-
-```
-web3-wallet-shim/
-├── manifest.json          # Extension manifest
-├── package.json           # Dependencies
-├── src/
-│   ├── content/          # Content scripts
-│   │   ├── index.ts      # Content script entry
-│   │   ├── provider.ts   # EIP-1193 provider
-│   │   └── injected.ts   # Page injection script
-│   ├── background/       # Background script
-│   │   └── index.ts      # Message router & state
-│   ├── popup/           # Extension popup UI
-│   │   ├── index.html
-│   │   ├── index.ts
-│   │   └── styles.css
-│   ├── shared/          # Shared utilities
-│   │   ├── types.ts     # TypeScript types
-│   │   ├── config.ts    # Configuration management
-│   │   └── messages.ts  # Message protocol
-│   └── assets/          # Icons
-└── dist/                # Build output
-```
+Download the latest signed XPI from [Releases](../../releases) and install in Firefox via `about:addons` → Install from File.
 
 ## Development
 
-Uses [bun](https://bun.sh/) for package management and [just](https://github.com/casey/just) for task running.
-
 ```bash
-just build     # Build for production
-just dev       # Watch mode
-just typecheck # Type check
-just check     # Lint and format check
-just fix       # Fix lint and format issues
-just ci        # Full CI check
-just package   # Create XPI file for distribution
+just dev        # Watch mode
+just clean      # Clean build files
 ```
 
 ## Releasing
 
-To create a new release:
+### One-time Setup
+
+1. Get Mozilla API credentials: https://addons.mozilla.org/en-US/developers/addon/api/key/
+2. Run `just setup` to create `.env`
+3. Add credentials to `.env`:
+   ```
+   AMO_API_KEY=user:xxx:xxx
+   AMO_API_SECRET=xxx
+   ```
+
+### Ship It
 
 ```bash
-# Option 1: Use just (creates tag, pushes, triggers GitHub Actions)
-just release v1.0.0
-
-# Option 2: Manual
-just package                    # Creates zeroconnect-wallet.xpi
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0         # Triggers GitHub Actions release
+just ship 1.0.3
 ```
 
-GitHub Actions will automatically:
-1. Build the extension
-2. Package it as `zeroconnect-wallet.xpi`
-3. Create a GitHub Release with the XPI file attached
+This will:
+- ✅ Build the extension
+- ✅ Submit to Mozilla for signing
+- ✅ Create git tag (triggers GitHub Actions)
+- 📧 You get email when approved (1-24h)
 
-Download the XPI from the [Releases](../../releases) page to install in Firefox.
+### Manual Fallback
 
-## Publishing to GitHub
+If automatic signing fails:
+1. Download unsigned XPI from GitHub release
+2. Submit manually at https://addons.mozilla.org/en-US/developers/
+3. Download signed XPI when approved
+4. Upload to GitHub release
 
-To push this project to a new GitHub repository:
+## Features
 
-```bash
-# Create a new repository on GitHub (don't initialize with README)
-# Then run:
-git remote add origin https://github.com/YOUR_USERNAME/zeroconnect-wallet.git
-git branch -M main
-git push -u origin main
-
-# GitHub Actions will automatically run on pushes to main
-# To trigger a release, create and push a tag:
-git tag -a v1.0.0 -m "Initial release"
-git push origin v1.0.0
-```
-
-## Limitations
-
-- Firefox only (Manifest v2)
-- Cannot sign transactions (by design)
-- Read-only wallet, not suitable for trading
-- Some dApps may not recognize it as MetaMask (despite `isMetaMask: true`)
+- **Read-Only**: No private keys ever stored
+- **MetaMask Compatible**: Works with most DeFi apps
+- **Multi-Chain**: Ethereum, Polygon, Arbitrum, Optimism, Base, Sepolia
+- **Firefox Sync**: Settings sync across devices
 
 ## License
 
 MIT
-
-## Contributing
-
-Pull requests welcome! This is a simple utility extension - keep it lightweight and focused on read-only wallet connections.
