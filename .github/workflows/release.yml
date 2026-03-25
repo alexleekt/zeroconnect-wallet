@@ -7,17 +7,12 @@ on:
       - 'v*'
   pull_request:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      sign_with_mozilla:
-        description: 'Sign with Mozilla Add-ons (requires secrets)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
-  build:
+  build-and-sign:
     runs-on: ubuntu-latest
+    # Only sign when we have the secrets available (not on PRs from forks)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +30,7 @@ jobs:
       - name: Build extension
         run: bunx vite build
 
-      - name: Package extension
+      - name: Package unsigned extension
         run: |
           cd dist
           zip -r ../zeroconnect-wallet-unsigned.xpi .
@@ -47,31 +42,26 @@ jobs:
           name: extension-unsigned
           path: zeroconnect-wallet-unsigned.xpi
 
-  sign:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && inputs.sign_with_mozilla == true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build extension
-        run: bunx vite build
+      - name: Check for Mozilla API secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.AMO_API_KEY }}" ] && [ -n "${{ secrets.AMO_API_SECRET }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Mozilla API secrets not found. Skipping signing."
+          fi
 
       - name: Create source code archive
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         run: |
           zip -r source-code.zip src/ manifest.json package.json biome.json tsconfig.json vite.config.ts justfile README.md LICENSE BUILD_INSTRUCTIONS.md
 
       - name: Sign with Mozilla
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         id: sign
         uses: kewisch/action-web-ext@v1
+        continue-on-error: true
         with:
           cmd: sign
           source: ./dist
@@ -82,13 +72,14 @@ jobs:
           timeout: 3600000  # 1 hour timeout for review
 
       - name: Upload signed artifact
+        if: steps.check-secrets.outputs.has_secrets == 'true' && steps.sign.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: extension-signed
           path: web-ext-artifacts/*.xpi
 
   release:
-    needs: [build, sign]
+    needs: build-and-sign
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -112,12 +103,13 @@ jobs:
       - name: Prepare release files
         run: |
           cd artifacts
-          # Rename files for clarity
+          # Rename unsigned file
           mv zeroconnect-wallet-unsigned.xpi zeroconnect-wallet-v${GITHUB_REF_NAME#v}-unsigned.xpi 2>/dev/null || true
-          # Find signed xpi if it exists
+          # Rename signed file if it exists
           for f in *.xpi; do
-            if [[ "$f" != *"unsigned"* ]]; then
+            if [[ "$f" != *"unsigned"* ]] && [[ "$f" == *.xpi ]]; then
               mv "$f" "zeroconnect-wallet-v${GITHUB_REF_NAME#v}.xpi"
+              break
             fi
           done
           ls -la
@@ -135,6 +127,9 @@ jobs:
             
             ### Unsigned Version (For testing only)
             Download `zeroconnect-wallet-v${{ github.ref_name }}-unsigned.xpi` - This requires Firefox Developer Edition with `xpinstall.signatures.required` set to `false`.
+            
+            ## What's New
+            See [CHANGELOG.md](./CHANGELOG.md) or git log for details.
             
             ## Development
             See README.md for development instructions.
