@@ -5,7 +5,7 @@ set dotenv-load
 # Examples:
 #   just ship        # Auto-increment (1.0.2 -> 1.0.3)
 #   just ship 1.0.5  # Specific version
-ship:
+ship version="":
     #!/usr/bin/env bash
     set -euo pipefail
     
@@ -13,13 +13,13 @@ ship:
     current_version=$(grep '"version"' manifest.json | head -1 | sed 's/.*"\([0-9.]*\)".*/\1/')
     
     # Determine new version
-    if [ -z "${1:-}" ]; then
+    if [ -z "{{version}}" ]; then
         # Auto-increment patch version
         IFS='.' read -r major minor patch <<< "$current_version"
         new_version="${major}.${minor}.$((patch + 1))"
         echo "🚀 Shipping ZeroConnectWallet v${new_version} (auto-incremented from v${current_version})"
     else
-        new_version="$1"
+        new_version="{{version}}"
         echo "🚀 Shipping ZeroConnectWallet v${new_version}"
     fi
     echo ""
