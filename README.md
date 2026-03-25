@@ -14,6 +14,13 @@ A read-only Firefox extension that mimics MetaMask's EIP-1193 provider API. Conn
 
 ## Installation
 
+### From GitHub Releases (Recommended)
+
+1. Download the latest `zeroconnect-wallet.xpi` from the [Releases](../../releases) page
+2. Open Firefox and navigate to `about:addons`
+3. Click the gear icon → "Install Add-on From File"
+4. Select the downloaded `.xpi` file
+
 ### From Source (Developer Mode)
 
 1. Clone or download this repository
@@ -182,6 +189,45 @@ just typecheck # Type check
 just check     # Lint and format check
 just fix       # Fix lint and format issues
 just ci        # Full CI check
+just package   # Create XPI file for distribution
+```
+
+## Releasing
+
+To create a new release:
+
+```bash
+# Option 1: Use just (creates tag, pushes, triggers GitHub Actions)
+just release v1.0.0
+
+# Option 2: Manual
+just package                    # Creates zeroconnect-wallet.xpi
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0         # Triggers GitHub Actions release
+```
+
+GitHub Actions will automatically:
+1. Build the extension
+2. Package it as `zeroconnect-wallet.xpi`
+3. Create a GitHub Release with the XPI file attached
+
+Download the XPI from the [Releases](../../releases) page to install in Firefox.
+
+## Publishing to GitHub
+
+To push this project to a new GitHub repository:
+
+```bash
+# Create a new repository on GitHub (don't initialize with README)
+# Then run:
+git remote add origin https://github.com/YOUR_USERNAME/zeroconnect-wallet.git
+git branch -M main
+git push -u origin main
+
+# GitHub Actions will automatically run on pushes to main
+# To trigger a release, create and push a tag:
+git tag -a v1.0.0 -m "Initial release"
+git push origin v1.0.0
 ```
 
 ## Limitations
