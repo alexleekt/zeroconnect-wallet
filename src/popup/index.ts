@@ -70,15 +70,21 @@ async function initSelectorMode() {
  * Render address selector
  */
 function renderAddressSelector(addresses: string[]) {
-  addressList.innerHTML = '';
+  addressList.textContent = '';
 
-  addresses.forEach((address) => {
+  for (const address of addresses) {
     const item = document.createElement('div');
     item.className = 'address-item';
-    item.innerHTML = `
-      <span class="address">${address}</span>
-      <span class="select-indicator"></span>
-    `;
+    
+    const addressSpan = document.createElement('span');
+    addressSpan.className = 'address';
+    addressSpan.textContent = address;
+    
+    const indicatorSpan = document.createElement('span');
+    indicatorSpan.className = 'select-indicator';
+    
+    item.appendChild(addressSpan);
+    item.appendChild(indicatorSpan);
 
     item.addEventListener('click', async () => {
       // Send selection to background and wait for confirmation
@@ -99,7 +105,7 @@ function renderAddressSelector(addresses: string[]) {
     });
 
     addressList.appendChild(item);
-  });
+  }
 }
 
 /**
