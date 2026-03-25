@@ -11,8 +11,8 @@ bun install
 # Run in development mode
 just dev
 
-# Ship a new release
-just ship 1.0.3
+# Ship a new release (auto-increments version)
+just ship
 ```
 
 ## Installation
@@ -41,7 +41,8 @@ just clean      # Clean build files
 ### Ship It
 
 ```bash
-just ship 1.0.3
+just ship        # Auto-increment version (1.0.2 -> 1.0.3)
+just ship 1.1.0  # Or specify version manually
 ```
 
 This will:
