@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZeroConnectWallet</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🔷</span>
+        <h1>ZeroConnectWallet</h1>
+      </div>
+      <p class="subtitle">Read-only wallet for viewing balances</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Address Selector Mode -->
+      <section id="selector-section" class="section hidden">
+        <h2>Select Address</h2>
+        <p class="description">Choose which address to connect with:</p>
+        <div id="address-list" class="address-list"></div>
+        <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+      </section>
+
+      <!-- Configuration Mode -->
+      <section id="config-section" class="section">
+        <!-- Connection Status -->
+        <div class="status-card">
+          <div id="status-indicator" class="status-indicator">
+            <span class="status-dot"></span>
+            <span id="status-text">Disconnected</span>
+          </div>
+          <div id="connected-address" class="connected-address hidden"></div>
+        </div>
+
+        <!-- Address Configuration -->
+        <div class="config-group">
+          <label for="addresses-input">Wallet Addresses</label>
+          <textarea 
+            id="addresses-input" 
+            placeholder="0x... (one per line or comma-separated)"
+            rows="4"
+          ></textarea>
+          <p class="help-text">Add Ethereum addresses to connect with. One address per line or comma-separated.</p>
+        </div>
+
+        <!-- Chain Configuration -->
+        <div class="config-group">
+          <label for="chain-select">Network</label>
+          <select id="chain-select">
+            <option value="0x1">Ethereum Mainnet</option>
+            <option value="0xaa36a7">Sepolia Testnet</option>
+            <option value="0x89">Polygon</option>
+            <option value="0xa4b1">Arbitrum One</option>
+            <option value="0xa">Optimism</option>
+            <option value="0x2105">Base</option>
+          </select>
+        </div>
+
+        <!-- RPC Endpoint -->
+        <div class="config-group">
+          <label for="rpc-input">RPC Endpoint (Optional)</label>
+          <input 
+            type="text" 
+            id="rpc-input" 
+            placeholder="https://eth.llamarpc.com"
+          />
+          <p class="help-text">Leave empty to use default public RPC.</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+          <button id="save-btn" class="btn btn-primary">Save Configuration</button>
+          <button id="disconnect-btn" class="btn btn-secondary hidden">Disconnect</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>🔒 No private keys stored</p>
+    </footer>
+  </div>
+
+  <script src="./index.ts" type="module"></script>
+</body>
+</html>
