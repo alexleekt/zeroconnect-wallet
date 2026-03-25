@@ -14,12 +14,23 @@ A read-only Firefox extension that mimics MetaMask's EIP-1193 provider API. Conn
 
 ## Installation
 
-### From GitHub Releases (Recommended)
+### From GitHub Releases (Signed)
 
-1. Download the latest `zeroconnect-wallet.xpi` from the [Releases](../../releases) page
+> **Note:** The XPI files in releases are signed by Mozilla Add-ons and work in standard Firefox.
+
+1. Download the latest `zeroconnect-wallet-vX.X.X.xpi` from the [Releases](../../releases) page
 2. Open Firefox and navigate to `about:addons`
 3. Click the gear icon → "Install Add-on From File"
 4. Select the downloaded `.xpi` file
+5. Click "Add" when prompted
+
+### For Developers - Load Temporarily (Unsigned)
+
+For testing unsigned builds during development:
+
+1. Go to `about:debugging` in Firefox
+2. Click "This Firefox" → "Load Temporary Add-on"
+3. Select the `dist/manifest.json` file
 
 ### From Source (Developer Mode)
 
