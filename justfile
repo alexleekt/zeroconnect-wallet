@@ -89,7 +89,7 @@ validate: build
 
 # Submit to Mozilla Add-ons for signing (requires API credentials)
 # Get API credentials: https://addons.mozilla.org/en-US/developers/addon/api/key/
-# 
+#
 # Prerequisites:
 #   - Set up env vars via mise: `just setup` then edit .env
 #   - Or use varlock: `varlock run -- just submit-unlisted`
@@ -118,3 +118,75 @@ submit-unlisted: package
         --channel=unlisted \
         --upload-source-code=./submission/source-code.zip
     echo "✅ Submitted! Check your email for approval notification."
+
+# Update GitHub release with signed XPI
+# Usage: just update-release v1.0.2 /path/to/signed.xpi
+update-release version xpi-file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f "{{xpi-file}}" ]; then
+        echo "Error: XPI file not found: {{xpi-file}}"
+        echo ""
+        echo "Usage: just update-release {{version}} /path/to/zeroconnect-wallet.xpi"
+        echo ""
+        echo "Get the signed XPI from:"
+        echo "  1. Mozilla Developer Hub: https://addons.mozilla.org/en-US/developers/addons"
+        echo "  2. Find ZeroConnectWallet → Versions → Download"
+        exit 1
+    fi
+    echo "Updating release {{version}} with signed XPI..."
+    gh release upload {{version}} "{{xpi-file}}" --clobber
+    echo "✅ Updated! View at: https://github.com/alexleekt/zeroconnect-wallet/releases/tag/{{version}}"
+
+# Full release workflow: tag, build, submit to Mozilla, update GitHub
+# Note: You still need to manually download signed XPI from Mozilla after approval
+release-full version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚀 Starting full release workflow for {{version}}"
+    echo ""
+
+    # Step 1: Verify env vars
+    if [ -z "${AMO_API_KEY:-}" ] || [ -z "${AMO_API_SECRET:-}" ]; then
+        echo "❌ Error: AMO_API_KEY and AMO_API_SECRET required"
+        echo "Run: just setup"
+        exit 1
+    fi
+
+    # Step 2: Create git tag
+    echo "Step 1/4: Creating git tag {{version}}..."
+    git tag -a "{{version}}" -m "Release {{version}}"
+    git push origin "{{version}}"
+    echo "✅ Tag created and pushed"
+    echo ""
+
+    # Step 3: Build and package
+    echo "Step 2/4: Building extension..."
+    just build
+    just package
+    echo "✅ Extension built"
+    echo ""
+
+    # Step 4: Submit to Mozilla
+    echo "Step 3/4: Submitting to Mozilla Add-ons..."
+    bunx web-ext sign \
+        --source-dir ./dist \
+        --api-key "$AMO_API_KEY" \
+        --api-secret "$AMO_API_SECRET" \
+        --channel=unlisted \
+        --upload-source-code=./submission/source-code.zip || true
+    echo "✅ Submitted to Mozilla"
+    echo ""
+
+    # Step 5: Instructions for next steps
+    echo "Step 4/4: Manual step required"
+    echo ""
+    echo "⚠️  IMPORTANT: Mozilla review takes 1-24 hours"
+    echo ""
+    echo "Next steps:"
+    echo "1. Wait for approval email from Mozilla"
+    echo "2. Download signed XPI from: https://addons.mozilla.org/en-US/developers/addons"
+    echo "3. Update GitHub release:"
+    echo "   just update-release {{version}} ~/Downloads/zeroconnect-wallet.xpi"
+    echo ""
+    echo "View GitHub release: https://github.com/alexleekt/zeroconnect-wallet/releases/tag/{{version}}"

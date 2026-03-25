@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build, Sign, and Release
 
 on:
   push:
@@ -7,6 +7,13 @@ on:
       - 'v*'
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      sign_with_mozilla:
+        description: 'Sign with Mozilla Add-ons (requires secrets)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -31,21 +38,19 @@ jobs:
       - name: Package extension
         run: |
           cd dist
-          zip -r ../zeroconnect-wallet.xpi .
+          zip -r ../zeroconnect-wallet-unsigned.xpi .
           cd ..
 
-      - name: Upload build artifact
+      - name: Upload unsigned artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-xpi
-          path: zeroconnect-wallet.xpi
+          name: extension-unsigned
+          path: zeroconnect-wallet-unsigned.xpi
 
-  release:
+  sign:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
+    if: github.event_name == 'workflow_dispatch' && inputs.sign_with_mozilla == true
     steps:
       - uses: actions/checkout@v4
 
@@ -60,16 +65,78 @@ jobs:
       - name: Build extension
         run: bunx vite build
 
-      - name: Package extension
+      - name: Create source code archive
         run: |
-          cd dist
-          zip -r ../zeroconnect-wallet.xpi .
-          cd ..
+          zip -r source-code.zip src/ manifest.json package.json biome.json tsconfig.json vite.config.ts justfile README.md LICENSE BUILD_INSTRUCTIONS.md
+
+      - name: Sign with Mozilla
+        id: sign
+        uses: kewisch/action-web-ext@v1
+        with:
+          cmd: sign
+          source: ./dist
+          channel: unlisted
+          apiKey: ${{ secrets.AMO_API_KEY }}
+          apiSecret: ${{ secrets.AMO_API_SECRET }}
+          uploadSourceCode: ./source-code.zip
+          timeout: 3600000  # 1 hour timeout for review
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-signed
+          path: web-ext-artifacts/*.xpi
+
+  release:
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download unsigned artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-unsigned
+          path: ./artifacts
+
+      - name: Download signed artifact (if available)
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-signed
+          path: ./artifacts
+        continue-on-error: true
+
+      - name: Prepare release files
+        run: |
+          cd artifacts
+          # Rename files for clarity
+          mv zeroconnect-wallet-unsigned.xpi zeroconnect-wallet-v${GITHUB_REF_NAME#v}-unsigned.xpi 2>/dev/null || true
+          # Find signed xpi if it exists
+          for f in *.xpi; do
+            if [[ "$f" != *"unsigned"* ]]; then
+              mv "$f" "zeroconnect-wallet-v${GITHUB_REF_NAME#v}.xpi"
+            fi
+          done
+          ls -la
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: zeroconnect-wallet.xpi
+          files: ./artifacts/*.xpi
           generate_release_notes: true
+          body: |
+            ## Installation
+            
+            ### Signed Version (Recommended)
+            Download `zeroconnect-wallet-v${{ github.ref_name }}.xpi` - This is signed by Mozilla and works in standard Firefox.
+            
+            ### Unsigned Version (For testing only)
+            Download `zeroconnect-wallet-v${{ github.ref_name }}-unsigned.xpi` - This requires Firefox Developer Edition with `xpinstall.signatures.required` set to `false`.
+            
+            ## Development
+            See README.md for development instructions.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
