@@ -92,3 +92,43 @@ dev:
 # Clean build artifacts
 clean:
     rm -rf dist *.xpi source-code.zip
+
+# Fetch signed XPI from Mozilla and upload to GitHub
+# Run this after you get the approval email
+# Usage: just fetch 1.0.2
+fetch version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📥 Fetching signed v{{version}} from Mozilla..."
+    
+    # Use web-ext to download signed XPI
+    bunx web-ext sign \
+        --source-dir ./dist \
+        --api-key "$AMO_API_KEY" \
+        --api-secret "$AMO_API_SECRET" \
+        --channel=unlisted \
+        --download-dir=./web-ext-artifacts \
+        || echo "⚠️  If download failed, extension may still be pending review"
+    
+    # Find the signed XPI
+    signed_xpi=$(ls -t web-ext-artifacts/*.xpi 2>/dev/null | head -1 || echo "")
+    
+    if [ -z "$signed_xpi" ]; then
+        echo "❌ No signed XPI found in web-ext-artifacts/"
+        echo ""
+        echo "The extension might still be pending review."
+        echo "Check status at: https://addons.mozilla.org/en-US/developers/addons"
+        echo ""
+        echo "Or manually download from Mozilla and run:"
+        echo "  gh release upload v{{version}} /path/to/zeroconnect-wallet.xpi --clobber"
+        exit 1
+    fi
+    
+    echo "✅ Found signed XPI: $signed_xpi"
+    
+    # Upload to GitHub release
+    echo "📤 Uploading to GitHub release v{{version}}..."
+    gh release upload "v{{version}}" "$signed_xpi" --clobber
+    
+    echo "✅ Done! Signed XPI uploaded to GitHub release"
+    echo "View: https://github.com/alexleekt/zeroconnect-wallet/releases/tag/v{{version}}"

@@ -51,13 +51,29 @@ This will:
 - ✅ Create git tag (triggers GitHub Actions)
 - 📧 You get email when approved (1-24h)
 
-### Manual Fallback
+### Fetch Signed Version
 
-If automatic signing fails:
-1. Download unsigned XPI from GitHub release
-2. Submit manually at https://addons.mozilla.org/en-US/developers/
-3. Download signed XPI when approved
-4. Upload to GitHub release
+After you get the approval email from Mozilla:
+
+```bash
+just fetch 1.0.3   # Downloads signed XPI and uploads to GitHub
+```
+
+This will:
+- 📥 Download the signed XPI from Mozilla
+- 📤 Upload it to the GitHub release
+
+### Full Workflow Example
+
+```bash
+# 1. Ship it
+just ship
+
+# 2. Wait for Mozilla approval email (1-24 hours)
+
+# 3. Fetch the signed version
+just fetch 1.0.3
+```
 
 ## Features
 
