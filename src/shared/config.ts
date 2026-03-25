@@ -15,22 +15,29 @@ export async function getConfig(): Promise<WalletConfig> {
   try {
     // Try sync storage first
     const syncResult = await browser.storage.sync.get('walletConfig');
+    console.log('Config: Sync storage result:', syncResult);
     if (syncResult.walletConfig) {
+      console.log('Config: Using sync storage');
       return { ...DEFAULT_CONFIG, ...syncResult.walletConfig };
     }
-  } catch {
+  } catch (error) {
+    console.warn('Config: Sync storage failed:', error);
     // Fall back to local storage if sync fails
   }
 
   try {
     const localResult = await browser.storage.local.get('walletConfig');
+    console.log('Config: Local storage result:', localResult);
     if (localResult.walletConfig) {
+      console.log('Config: Using local storage');
       return { ...DEFAULT_CONFIG, ...localResult.walletConfig };
     }
-  } catch {
+  } catch (error) {
+    console.error('Config: Local storage failed:', error);
     // Use defaults if both fail
   }
 
+  console.log('Config: Using default config');
   return DEFAULT_CONFIG;
 }
 
@@ -40,9 +47,12 @@ export async function getConfig(): Promise<WalletConfig> {
 export async function saveConfig(config: WalletConfig): Promise<void> {
   try {
     await browser.storage.sync.set({ walletConfig: config });
-  } catch {
+    console.log('Config: Saved to sync storage');
+  } catch (error) {
+    console.warn('Config: Failed to save to sync, falling back to local:', error);
     // Fall back to local storage
     await browser.storage.local.set({ walletConfig: config });
+    console.log('Config: Saved to local storage');
   }
 }
 

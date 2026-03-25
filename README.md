@@ -90,6 +90,23 @@ When a dApp tries to initiate a transaction, you'll see a notification explainin
 - Falls back to `browser.storage.local` if sync unavailable
 - Stores: addresses, chainId, rpcUrl, lastConnectedAddress
 
+### Firefox Sync
+
+**Requirements for sync to work:**
+1. Sign into Firefox Account on all devices
+2. Enable Sync in Firefox settings
+3. Install the extension on each device
+4. Configure addresses on one device
+
+**Important:** When you remove the extension, Firefox deletes all its data (including synced data). This is expected behavior for privacy/security. To keep your configuration:
+- Don't remove the extension, just disable it
+- Or note down your configured addresses before removing
+
+**Debugging sync issues:**
+- Check browser console for "Config: Sync storage result" logs
+- Verify you're signed into Firefox Account
+- Check `about:preferences#sync` to ensure sync is enabled
+
 ### Security
 
 - No private keys, seed phrases, or secrets stored
