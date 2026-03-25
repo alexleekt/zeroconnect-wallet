@@ -22,7 +22,7 @@
     "default_popup": "popup/index.html"
   },
   "background": {
-    "scripts": ["background/index.js"],
+    "page": "background/background.html",
     "persistent": false
   },
   "content_scripts": [

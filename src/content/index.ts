@@ -30,15 +30,16 @@ window.addEventListener('message', async (event) => {
   
   // Handle messages from injected script
   if (message?.type === 'ZEROCONNECT_REQUEST') {
-    console.log('Content script: Received request:', message.payload?.type);
+    console.log('Content script: Received request:', message.payload?.type, 'requestId:', message.requestId);
     
     try {
       // Forward to background script
       console.log('Content script: Sending to background...');
       const response = await browser.runtime.sendMessage(message.payload);
-      console.log('Content script: Got response:', response);
+      console.log('Content script: Got response from background:', JSON.stringify(response));
       
       // Send response back to injected script
+      console.log('Content script: Sending response to injected script, requestId:', message.requestId);
       window.postMessage({
         type: 'ZEROCONNECT_RESPONSE',
         payload: response,
