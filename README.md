@@ -49,30 +49,19 @@ This will:
 - ✅ Build the extension
 - ✅ Submit to Mozilla for signing
 - ✅ Create git tag (triggers GitHub Actions)
-- 📧 You get email when approved (1-24h)
+- 🤖 **GitHub Actions automatically fetches signed XPI within 24h**
 
-### Fetch Signed Version
+### How It Works
 
-After you get the approval email from Mozilla:
+**Fully Automated (CI/CD):**
+1. You run `just ship`
+2. GitHub Actions submits to Mozilla
+3. GitHub Actions polls hourly for the signed version
+4. Signed XPI automatically appears in GitHub release (within 24h)
 
+**Manual Override (if needed):**
 ```bash
-just fetch 1.0.3   # Downloads signed XPI and uploads to GitHub
-```
-
-This will:
-- 📥 Download the signed XPI from Mozilla
-- 📤 Upload it to the GitHub release
-
-### Full Workflow Example
-
-```bash
-# 1. Ship it
-just ship
-
-# 2. Wait for Mozilla approval email (1-24 hours)
-
-# 3. Fetch the signed version
-just fetch 1.0.3
+just fetch 1.0.3   # Manually download and upload signed XPI
 ```
 
 ## Features

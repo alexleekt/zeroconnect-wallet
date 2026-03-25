@@ -1,0 +1,101 @@
+name: Poll for Signed Extension
+
+on:
+  schedule:
+    # Run every hour to check for signed extensions
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to fetch (e.g., 1.0.3)'
+        required: true
+        type: string
+
+jobs:
+  fetch-signed:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Determine version to fetch
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Get latest tag
+            latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -n "$latest_tag" ]; then
+              echo "version=${latest_tag#v}" >> $GITHUB_OUTPUT
+            else
+              echo "No tags found, skipping"
+              exit 0
+            fi
+          fi
+
+      - name: Check if release already has signed XPI
+        id: check-release
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          if [ -z "$version" ]; then
+            echo "signed_exists=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if release exists and has signed XPI
+          assets=$(gh release view "v$version" --json assets 2>/dev/null || echo "")
+          if echo "$assets" | grep -q "zeroconnect-wallet-$version.xpi"; then
+            echo "Release v$version already has signed XPI, skipping"
+            echo "signed_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "signed_exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch signed XPI from Mozilla
+        if: steps.check-release.outputs.signed_exists == 'false'
+        id: fetch
+        continue-on-error: true
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          echo "Fetching signed v$version from Mozilla..."
+          
+          # Try to download signed XPI
+          bunx web-ext sign \
+            --source-dir ./dist \
+            --api-key "${{ secrets.AMO_API_KEY }}" \
+            --api-secret "${{ secrets.AMO_API_SECRET }}" \
+            --channel=unlisted \
+            --approval-timeout=60000 \
+            || echo "Extension not yet approved or already downloaded"
+
+      - name: Upload signed XPI to GitHub release
+        if: steps.fetch.outcome == 'success'
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          
+          # Find the signed XPI
+          signed_xpi=$(ls -t web-ext-artifacts/*.xpi 2>/dev/null | grep -v "unsigned" | head -1 || echo "")
+          
+          if [ -n "$signed_xpi" ]; then
+            echo "Found signed XPI: $signed_xpi"
+            # Rename to standard format
+            mv "$signed_xpi" "zeroconnect-wallet-$version.xpi"
+            # Upload to release
+            gh release upload "v$version" "zeroconnect-wallet-$version.xpi" --clobber
+            echo "✅ Signed XPI uploaded to GitHub release v$version"
+          else
+            echo "No signed XPI found, will try again in next scheduled run"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
