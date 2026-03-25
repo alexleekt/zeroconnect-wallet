@@ -38,24 +38,25 @@ npm run dev
 
 ## Usage
 
-### Initial Setup
+### Current Implementation (Hardcoded Address)
 
-1. Click the ZeroConnectWallet icon in your Firefox toolbar
-2. Add your Ethereum address(es) in the configuration textarea
-   - One address per line, or comma-separated
-   - Example: `0x742d35Cc6634C0532925a3b844Bc9e7595f1F0D8`
-3. Select your preferred network from the dropdown
-4. (Optional) Enter a custom RPC endpoint, or leave empty for defaults
-5. Click "Save Configuration"
+This version uses a hardcoded address for immediate testing:
+- **Address:** `0x8364f08a5b8737f07BE54b982A2089Cf70d73966`
+- No configuration needed - works out of the box
 
-### Connecting to dApps
+**To use:**
+1. Install the extension
+2. Visit any DeFi application (e.g., Uniswap, Aave, Compound)
+3. Click "Connect Wallet"
+4. The extension automatically connects with the hardcoded address
 
-1. Visit any DeFi application (e.g., Uniswap, Aave, Compound)
-2. Click "Connect Wallet" on the dApp
-3. The extension will:
-   - Auto-connect if you have only one address configured
-   - Show a popup to select which address to use if you have multiple
-4. The dApp will show you as connected and can read your balances
+### Planned Features
+
+The popup UI includes configuration features for future releases:
+- Custom address configuration
+- Network selection (Ethereum, Polygon, Arbitrum, etc.)
+- Custom RPC endpoints
+- Firefox Sync support
 
 ### What Works
 
