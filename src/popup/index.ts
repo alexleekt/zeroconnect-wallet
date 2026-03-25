@@ -1,4 +1,4 @@
-import { getConfig, updateConfig, parseAddressList, isValidAddress } from '../shared/config';
+import { getConfig, isValidAddress, parseAddressList, updateConfig } from '../shared/config';
 import type { WalletConfig } from '../shared/types';
 
 /**
@@ -48,7 +48,7 @@ async function initSelectorMode() {
 
   // Get pending addresses from storage
   const result = await browser.storage.local.get('pendingAddresses');
-  const addresses = result.pendingAddresses as string[] || [];
+  const addresses = (result.pendingAddresses as string[]) || [];
 
   if (addresses.length === 0) {
     // No addresses, close popup
@@ -92,9 +92,9 @@ function renderAddressSelector(addresses: string[]) {
       } catch (error) {
         console.error('ZeroConnectWallet: Failed to send address selection:', error);
       }
-      
+
       // Wait a bit to ensure message is processed before closing
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       window.close();
     });
 
@@ -184,7 +184,7 @@ async function handleSave() {
 
   try {
     await updateConfig(newConfig);
-    
+
     // Show success notification
     browser.notifications.create({
       type: 'basic',

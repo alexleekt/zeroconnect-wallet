@@ -1,6 +1,6 @@
 /**
  * Background Script
- * 
+ *
  * Central message router and state manager
  */
 
@@ -36,32 +36,32 @@ let popupWindowId: number | null = null;
  */
 browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   console.log('Background: Received:', message?.type);
-  
+
   (async () => {
     try {
       let response: any;
-      
+
       switch (message.type) {
         case 'CONNECT_REQUEST':
           response = await handleConnectRequest();
           break;
-          
+
         case 'GET_CONFIG':
           response = handleGetConfig();
           break;
-          
+
         case 'UPDATE_CONFIG':
           response = await handleUpdateConfig(message.config);
           break;
-          
+
         case 'RPC_REQUEST':
           response = await handleRpcRequest(message.method, message.params);
           break;
-          
+
         case 'GET_CONNECTION_STATE':
           response = handleGetConnectionState();
           break;
-          
+
         case 'ADDRESS_SELECTED':
           if (pendingConnectionRequest) {
             pendingConnectionRequest.resolve(message.address);
@@ -69,7 +69,7 @@ browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           }
           response = { type: 'SELECTION_ACK', success: true };
           break;
-          
+
         case 'SELECTION_CANCELLED':
           if (pendingConnectionRequest) {
             pendingConnectionRequest.reject();
@@ -77,17 +77,17 @@ browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           }
           response = { type: 'SELECTION_ACK', success: true };
           break;
-          
+
         case 'SHOW_REJECTION_NOTIFICATION':
           showRejectionNotification(message.method);
           response = undefined;
           break;
-          
+
         default:
           console.log('Background: Unknown type:', message.type);
           response = undefined;
       }
-      
+
       console.log('Background: Responding with:', response);
       sendResponse(response);
     } catch (error) {
@@ -95,7 +95,7 @@ browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
       sendResponse(undefined);
     }
   })();
-  
+
   return true; // Keep channel open for async
 });
 
@@ -115,8 +115,7 @@ async function handleConnectRequest(): Promise<BackgroundResponse> {
   }
 
   // Check if we have a last connected address that's still valid
-  if (config.lastConnectedAddress && 
-      config.addresses.includes(config.lastConnectedAddress)) {
+  if (config.lastConnectedAddress && config.addresses.includes(config.lastConnectedAddress)) {
     console.log('Background: Using last connected address:', config.lastConnectedAddress);
     connectionState.isConnected = true;
     connectionState.selectedAddress = config.lastConnectedAddress;
@@ -216,7 +215,6 @@ async function openAddressSelector(addresses: string[]) {
         browser.windows.onRemoved.removeListener(handleWindowRemoved);
       }
     }, 60000); // 1 minute timeout
-
   } catch (error) {
     console.error('Failed to open address selector:', error);
     // Reject pending request
@@ -242,10 +240,10 @@ async function handleGetConfig(): Promise<BackgroundResponse> {
  * Handle update config request
  */
 async function handleUpdateConfig(
-  updates: Partial<import('../shared/types').WalletConfig>
+  updates: Partial<import('../shared/types').WalletConfig>,
 ): Promise<BackgroundResponse> {
   const newConfig = await updateConfig(updates);
-  
+
   // Update connection state if chain changed
   if (updates.chainId) {
     connectionState.chainId = updates.chainId;
@@ -260,13 +258,10 @@ async function handleUpdateConfig(
 /**
  * Handle RPC request by forwarding to configured endpoint
  */
-async function handleRpcRequest(
-  method: string,
-  params: unknown[]
-): Promise<BackgroundResponse> {
+async function handleRpcRequest(method: string, params: unknown[]): Promise<BackgroundResponse> {
   try {
     const config = await getConfig();
-    
+
     const response = await fetch(config.rpcUrl, {
       method: 'POST',
       headers: {

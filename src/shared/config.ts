@@ -59,9 +59,7 @@ export async function saveConfig(config: WalletConfig): Promise<void> {
 /**
  * Update specific configuration fields
  */
-export async function updateConfig(
-  updates: Partial<WalletConfig>
-): Promise<WalletConfig> {
+export async function updateConfig(updates: Partial<WalletConfig>): Promise<WalletConfig> {
   const currentConfig = await getConfig();
   const newConfig = { ...currentConfig, ...updates };
   await saveConfig(newConfig);

@@ -17,8 +17,8 @@ A read-only Firefox extension that mimics MetaMask's EIP-1193 provider API. Conn
 ### From Source (Developer Mode)
 
 1. Clone or download this repository
-2. Run `npm install` to install dependencies
-3. Run `npm run build` to build the extension
+2. Run `bun install` to install dependencies
+3. Run `just build` to build the extension
 4. Open Firefox and navigate to `about:debugging`
 5. Click "This Firefox" → "Load Temporary Add-on"
 6. Select the `dist/manifest.json` file
@@ -27,13 +27,25 @@ A read-only Firefox extension that mimics MetaMask's EIP-1193 provider API. Conn
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Build for production
-npm run build
+just build
 
 # Watch mode (auto-rebuild on changes)
-npm run dev
+just dev
+
+# Type check
+just typecheck
+
+# Lint and format check
+just check
+
+# Fix lint and format issues
+just fix
+
+# Full CI check
+just ci
 ```
 
 ## Usage
@@ -161,28 +173,15 @@ web3-wallet-shim/
 
 ## Development
 
-### Build
+Uses [bun](https://bun.sh/) for package management and [just](https://github.com/casey/just) for task running.
 
 ```bash
-npm run build
-```
-
-### Watch Mode
-
-```bash
-npm run dev
-```
-
-### Type Checking
-
-```bash
-npm run typecheck
-```
-
-### Linting
-
-```bash
-npm run lint
+just build     # Build for production
+just dev       # Watch mode
+just typecheck # Type check
+just check     # Lint and format check
+just fix       # Fix lint and format issues
+just ci        # Full CI check
 ```
 
 ## Limitations

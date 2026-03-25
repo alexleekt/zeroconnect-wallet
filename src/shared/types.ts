@@ -17,14 +17,14 @@ export interface ProviderInfo {
   chainId: string;
 }
 
-export type ProviderEventType = 
-  | 'connect' 
-  | 'disconnect' 
-  | 'accountsChanged' 
-  | 'chainChanged' 
+export type ProviderEventType =
+  | 'connect'
+  | 'disconnect'
+  | 'accountsChanged'
+  | 'chainChanged'
   | 'message';
 
-export type ProviderEventHandler = 
+export type ProviderEventHandler =
   | ((info: ProviderInfo) => void)
   | ((error: ProviderError) => void)
   | ((accounts: string[]) => void)
