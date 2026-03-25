@@ -1,16 +1,15 @@
 # ZeroConnectWallet - Task Runner
 #
 # Environment Setup:
-#   This project uses varlock (https://varlock.dev) and mise (https://mise.jdx.dev)
-#   to manage environment variables securely.
+#   This project uses mise (https://mise.jdx.dev) to manage environment variables.
+#   The .mise.toml file is configured to load .env automatically.
 #
 #   1. Copy .env.example to .env and fill in your secrets
 #   2. Run `mise trust` to allow mise to load the .env file
 #   3. All just commands will automatically have access to env vars
-#
-#   Alternatively, use varlock for schema validation:
-#   - varlock load    # Validate and load env vars
-#   - varlock run -- just submit-unlisted  # Run with varlock
+
+# Load environment variables from .env file automatically
+set dotenv-load
 
 # Build the extension for production
 build:
