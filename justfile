@@ -40,7 +40,15 @@ package: build
 release version: package
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Creating release $version..."
+    echo "Creating release {{version}}..."
     git tag -a "{{version}}" -m "Release {{version}}"
     git push origin "{{version}}"
     echo "Release {{version}} tagged and pushed. GitHub Actions will build and publish."
+
+# Lint extension with Mozilla's web-ext (catches validation errors)
+lint-mozilla:
+    bunx web-ext lint --source-dir ./dist
+
+# Validate XPI before submission (catches errors early)
+validate: build
+    bunx web-ext lint --source-dir ./dist
