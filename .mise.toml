@@ -1,0 +1,9 @@
+[env]
+# Load environment variables from .env file
+# Create .env from .env.example and fill in your secrets
+_.file = ".env"
+
+[tools]
+# Tool versions managed by mise
+bun = "latest"
+node = "20"

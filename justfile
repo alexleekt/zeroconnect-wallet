@@ -1,4 +1,16 @@
 # ZeroConnectWallet - Task Runner
+#
+# Environment Setup:
+#   This project uses varlock (https://varlock.dev) and mise (https://mise.jdx.dev)
+#   to manage environment variables securely.
+#
+#   1. Copy .env.example to .env and fill in your secrets
+#   2. Run `mise trust` to allow mise to load the .env file
+#   3. All just commands will automatically have access to env vars
+#
+#   Alternatively, use varlock for schema validation:
+#   - varlock load    # Validate and load env vars
+#   - varlock run -- just submit-unlisted  # Run with varlock
 
 # Build the extension for production
 build:
@@ -29,6 +41,29 @@ clean:
 install:
     bun install
 
+# Setup project - copy env template and trust mise
+setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f .env ]; then
+        cp .env.example .env
+        echo "✅ Created .env file from .env.example"
+        echo "📝 Please edit .env and add your Mozilla API credentials"
+    else
+        echo "✅ .env file already exists"
+    fi
+    if command -v mise &> /dev/null; then
+        mise trust
+        echo "✅ Trusted mise configuration"
+    else
+        echo "⚠️  mise not installed. Install from https://mise.jdx.dev"
+    fi
+    echo ""
+    echo "Next steps:"
+    echo "1. Get API credentials from https://addons.mozilla.org/en-US/developers/addon/api/key/"
+    echo "2. Edit .env and add your AMO_API_KEY and AMO_API_SECRET"
+    echo "3. Run: just submit-unlisted"
+
 # Full CI check
 ci: clean typecheck check build
 
@@ -55,16 +90,25 @@ validate: build
 
 # Submit to Mozilla Add-ons for signing (requires API credentials)
 # Get API credentials: https://addons.mozilla.org/en-US/developers/addon/api/key/
-# Usage: just submit-unlisted
-# Or with env vars: AMO_API_KEY=xxx AMO_API_SECRET=yyy just submit-unlisted
+# 
+# Prerequisites:
+#   - Set up env vars via mise: `just setup` then edit .env
+#   - Or use varlock: `varlock run -- just submit-unlisted`
+#   - Or inline: AMO_API_KEY=xxx AMO_API_SECRET=yyy just submit-unlisted
+#
+# The .env.schema file defines the schema for validation
 submit-unlisted: package
     #!/usr/bin/env bash
     set -euo pipefail
     if [ -z "${AMO_API_KEY:-}" ] || [ -z "${AMO_API_SECRET:-}" ]; then
         echo "Error: AMO_API_KEY and AMO_API_SECRET environment variables required"
-        echo "Get your API credentials at: https://addons.mozilla.org/en-US/developers/addon/api/key/"
         echo ""
-        echo "Usage: AMO_API_KEY=your-key AMO_API_SECRET=your-secret just submit-unlisted"
+        echo "Setup options:"
+        echo "  1. Use mise (recommended): just setup"
+        echo "  2. Use varlock: varlock run -- just submit-unlisted"
+        echo "  3. Inline: AMO_API_KEY=xxx AMO_API_SECRET=yyy just submit-unlisted"
+        echo ""
+        echo "Get API credentials at: https://addons.mozilla.org/en-US/developers/addon/api/key/"
         exit 1
     fi
     echo "Submitting to Mozilla Add-ons (unlisted)..."
