@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build",
+    "build": "npm run clean && vite build && npm run organize",
+    "clean": "rm -rf dist",
+    "organize": "cp manifest.json dist/ && mkdir -p dist/assets && cp src/assets/icon-48.png dist/assets/ && cp src/assets/icon-96.png dist/assets/ && mv dist/src/popup/index.html dist/popup/ 2>/dev/null || true && mv dist/popup/popup.js dist/popup/index.js 2>/dev/null || true && mv dist/popup/popup.css dist/popup/styles.css 2>/dev/null || true && mv dist/injected/index.js dist/content/injected.js 2>/dev/null || true && rmdir dist/src/popup dist/src 2>/dev/null || true && rmdir dist/injected 2>/dev/null || true && sed -i '' 's|../../popup/popup.js|./index.js|g' dist/popup/index.html 2>/dev/null || sed -i 's|../../popup/popup.js|./index.js|g' dist/popup/index.html 2>/dev/null || true && sed -i '' 's|../../popup/popup.css|./styles.css|g' dist/popup/index.html 2>/dev/null || sed -i 's|../../popup/popup.css|./styles.css|g' dist/popup/index.html 2>/dev/null || true",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
