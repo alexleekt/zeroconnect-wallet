@@ -101,13 +101,13 @@ fetch version:
     set -euo pipefail
     echo "📥 Fetching signed v{{version}} from Mozilla..."
     
-    # Use web-ext to download signed XPI
+    # Use web-ext to download signed XPI (saves to web-ext-artifacts/ by default)
     bunx web-ext sign \
         --source-dir ./dist \
         --api-key "$AMO_API_KEY" \
         --api-secret "$AMO_API_SECRET" \
         --channel=unlisted \
-        --download-dir=./web-ext-artifacts \
+        --approval-timeout=10000 \
         || echo "⚠️  If download failed, extension may still be pending review"
     
     # Find the signed XPI
