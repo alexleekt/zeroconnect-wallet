@@ -27,22 +27,32 @@ const organizeBuild = () => ({
       rmdirSync('dist/src');
     }
 
-    // Move CSS to popup directory
-    if (existsSync('dist/assets/index-D11-pg6E.css')) {
-      renameSync('dist/assets/index-D11-pg6E.css', 'dist/popup/styles.css');
+    // Find and move CSS file from assets to popup
+    const assetFiles = existsSync('dist/assets') ? readdirSync('dist/assets') : [];
+    const cssFile = assetFiles.find(f => f.endsWith('.css'));
+    if (cssFile) {
+      renameSync(`dist/assets/${cssFile}`, 'dist/popup/styles.css');
     }
 
-    // Update HTML to reference correct paths
+    // Update HTML to reference correct paths (relative, not absolute)
     if (existsSync('dist/popup/index.html')) {
       let html = readFileSync('dist/popup/index.html', 'utf-8');
-      html = html.replace(/\.\.\/..\/assets\/[^"]+/g, './styles.css');
-      html = html.replace(/\.\.\/..\/popup\/[^"]+/g, './index.js');
+      // Replace all variations of paths with relative ones
+      // The HTML is in dist/popup/, so:
+      // - JS is at ./index.js (same directory)
+      // - CSS is at ./styles.css (moved there)
+      // - Shared chunks are at ../shared/
+      html = html.replace(/src="[^"]*\/popup\/index\.js"/g, 'src="./index.js"');
+      html = html.replace(/href="[^"]*\/assets\/[^"]+"/g, 'href="./styles.css"');
+      html = html.replace(/href="[^"]*\/shared\/[^"]+"/g, 'href="../shared/config-BZq2fVqC.js"');
       writeFileSync('dist/popup/index.html', html);
+      console.log('Updated popup/index.html with relative paths');
     }
   },
 });
 
 export default defineConfig({
+  base: './', // Use relative paths
   build: {
     outDir: 'dist',
     emptyOutDir: true,
