@@ -65,6 +65,7 @@ body {
   line-height: 1.5;
   min-width: 380px;
   max-width: 420px;
+  min-height: 600px;
 }
 
 /* Layout */
@@ -72,6 +73,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 /* Header */
@@ -88,7 +90,8 @@ body {
 }
 
 .logo-icon {
-  font-size: 24px;
+  width: 40px;
+  height: 40px;
 }
 
 .logo h1 {

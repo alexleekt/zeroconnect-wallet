@@ -187,7 +187,7 @@ async function openAddressSelector(addresses: string[]) {
       url: browser.runtime.getURL('popup/index.html?mode=selector'),
       type: 'popup',
       width: 420,
-      height: 500,
+      height: 600,
     });
 
     // Track the popup window ID
