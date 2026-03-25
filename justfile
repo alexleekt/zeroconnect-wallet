@@ -110,8 +110,8 @@ fetch version:
         --approval-timeout=10000 \
         || echo "⚠️  If download failed, extension may still be pending review"
     
-    # Find the signed XPI
-    signed_xpi=$(ls -t web-ext-artifacts/*.xpi 2>/dev/null | head -1 || echo "")
+    # Find the signed XPI (not the unsigned one)
+    signed_xpi=$(ls -t web-ext-artifacts/*.xpi 2>/dev/null | grep -v "unsigned" | head -1 || echo "")
     
     if [ -z "$signed_xpi" ]; then
         echo "❌ No signed XPI found in web-ext-artifacts/"
@@ -126,9 +126,13 @@ fetch version:
     
     echo "✅ Found signed XPI: $signed_xpi"
     
+    # Rename to standard format with v prefix
+    final_name="zeroconnect-wallet-v{{version}}.xpi"
+    cp "$signed_xpi" "$final_name"
+    
     # Upload to GitHub release
     echo "📤 Uploading to GitHub release v{{version}}..."
-    gh release upload "v{{version}}" "$signed_xpi" --clobber
+    gh release upload "v{{version}}" "$final_name" --clobber
     
-    echo "✅ Done! Signed XPI uploaded to GitHub release"
+    echo "✅ Done! Signed XPI uploaded as $final_name"
     echo "View: https://github.com/alexleekt/zeroconnect-wallet/releases/tag/v{{version}}"

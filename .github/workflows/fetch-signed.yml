@@ -51,9 +51,10 @@ jobs:
             exit 0
           fi
           
-          # Check if release exists and has signed XPI
+          # Check if release exists and has ANY signed XPI (not the unsigned one)
           assets=$(gh release view "v$version" --json assets 2>/dev/null || echo "")
-          if echo "$assets" | grep -q "zeroconnect-wallet-$version.xpi"; then
+          # Look for any .xpi that doesn't contain "unsigned"
+          if echo "$assets" | grep -q "\.xpi.*\"name\":" | grep -qv "unsigned"; then
             echo "Release v$version already has signed XPI, skipping"
             echo "signed_exists=true" >> $GITHUB_OUTPUT
           else
@@ -84,16 +85,17 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           
-          # Find the signed XPI
+          # Find the signed XPI (any .xpi that's not unsigned)
           signed_xpi=$(ls -t web-ext-artifacts/*.xpi 2>/dev/null | grep -v "unsigned" | head -1 || echo "")
           
           if [ -n "$signed_xpi" ]; then
             echo "Found signed XPI: $signed_xpi"
-            # Rename to standard format
-            mv "$signed_xpi" "zeroconnect-wallet-$version.xpi"
+            # Rename to standard format with v prefix
+            final_name="zeroconnect-wallet-v${version}.xpi"
+            cp "$signed_xpi" "$final_name"
             # Upload to release
-            gh release upload "v$version" "zeroconnect-wallet-$version.xpi" --clobber
-            echo "✅ Signed XPI uploaded to GitHub release v$version"
+            gh release upload "v$version" "$final_name" --clobber
+            echo "✅ Signed XPI uploaded to GitHub release v$version as $final_name"
           else
             echo "No signed XPI found, will try again in next scheduled run"
           fi
