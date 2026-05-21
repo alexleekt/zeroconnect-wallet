@@ -12,3 +12,5 @@ bun.lockb
 .env.local
 .env.*.local
 web-ext-artifacts/
+*.xpi
+source-code.zip
