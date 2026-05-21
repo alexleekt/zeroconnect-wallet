@@ -3,6 +3,10 @@ import type { WalletConfig } from '../shared/types';
 
 /**
  * Popup Entry Point
+ *
+ * Supports two modes:
+ * - Config mode: Manage wallet addresses, network, RPC settings
+ * - Selector mode: Choose which address to connect with (triggered by dApp connection request)
  */
 
 // DOM Elements
@@ -27,9 +31,15 @@ let isSelectorMode = false;
  * Initialize popup
  */
 async function init() {
-  // Check URL params for mode
+  // Check URL params for mode (legacy desktop popup window)
   const urlParams = new URLSearchParams(window.location.search);
-  isSelectorMode = urlParams.get('mode') === 'selector';
+  const urlMode = urlParams.get('mode') === 'selector';
+
+  // Check storage for pending selector (mobile / inline mode)
+  const storageResult = await browser.storage.local.get(['selectorPending', 'pendingAddresses']);
+  const storageMode = storageResult.selectorPending === true;
+
+  isSelectorMode = urlMode || storageMode;
 
   if (isSelectorMode) {
     await initSelectorMode();
@@ -51,19 +61,36 @@ async function initSelectorMode() {
   const addresses = (result.pendingAddresses as string[]) || [];
 
   if (addresses.length === 0) {
-    // No addresses, close popup
-    window.close();
+    // No addresses pending — clear flag and show config
+    await browser.storage.local.remove(['selectorPending', 'pendingAddresses']);
+    switchToConfigMode();
     return;
   }
 
   // Render address list
   renderAddressSelector(addresses);
 
-  // Setup cancel button
-  cancelBtn.addEventListener('click', () => {
+  // Setup cancel button (onclick prevents duplicate listeners on re-init)
+  cancelBtn.onclick = async () => {
+    await browser.storage.local.remove(['selectorPending', 'pendingAddresses']);
     browser.runtime.sendMessage({ type: 'SELECTION_CANCELLED' });
-    window.close();
-  });
+    // On mobile inline mode, switch back to config instead of closing
+    if (window.innerWidth <= 480) {
+      switchToConfigMode();
+    } else {
+      window.close();
+    }
+  };
+}
+
+/**
+ * Switch from selector mode back to config mode (inline / mobile)
+ */
+async function switchToConfigMode() {
+  isSelectorMode = false;
+  selectorSection.classList.add('hidden');
+  configSection.classList.remove('hidden');
+  await initConfigMode();
 }
 
 /**
@@ -75,14 +102,14 @@ function renderAddressSelector(addresses: string[]) {
   for (const address of addresses) {
     const item = document.createElement('div');
     item.className = 'address-item';
-    
+
     const addressSpan = document.createElement('span');
     addressSpan.className = 'address';
     addressSpan.textContent = address;
-    
+
     const indicatorSpan = document.createElement('span');
     indicatorSpan.className = 'select-indicator';
-    
+
     item.appendChild(addressSpan);
     item.appendChild(indicatorSpan);
 
@@ -99,9 +126,17 @@ function renderAddressSelector(addresses: string[]) {
         console.error('ZeroConnectWallet: Failed to send address selection:', error);
       }
 
-      // Wait a bit to ensure message is processed before closing
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      window.close();
+      // Clear pending selector state
+      await browser.storage.local.remove(['selectorPending', 'pendingAddresses']);
+
+      // On mobile / narrow screens, switch back to config mode inline
+      // so the user sees the updated connection status
+      if (window.innerWidth <= 480) {
+        await switchToConfigMode();
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        window.close();
+      }
     });
 
     addressList.appendChild(item);
@@ -129,9 +164,9 @@ async function initConfigMode() {
   // Update status
   await updateConnectionStatus();
 
-  // Setup event listeners
-  saveBtn.addEventListener('click', handleSave);
-  disconnectBtn.addEventListener('click', handleDisconnect);
+  // Setup event listeners (only once — guard against re-init)
+  saveBtn.onclick = handleSave;
+  disconnectBtn.onclick = handleDisconnect;
 }
 
 /**

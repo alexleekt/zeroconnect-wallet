@@ -28,8 +28,11 @@ let pendingConnectionRequest: {
   reject: () => void;
 } | null = null;
 
-// Track popup window ID
+// Track popup window ID (desktop fallback only)
 let popupWindowId: number | null = null;
+
+// Track the windows.onRemoved listener so we can clean it up
+let windowRemovedListener: ((windowId: number) => void) | null = null;
 
 /**
  * Handle messages from content scripts and popup
@@ -67,6 +70,8 @@ browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             pendingConnectionRequest.resolve(message.address);
             pendingConnectionRequest = null;
           }
+          popupWindowId = null;
+          cleanupWindowListener();
           response = { type: 'SELECTION_ACK', success: true };
           break;
 
@@ -75,6 +80,8 @@ browser.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             pendingConnectionRequest.reject();
             pendingConnectionRequest = null;
           }
+          popupWindowId = null;
+          cleanupWindowListener();
           response = { type: 'SELECTION_ACK', success: true };
           break;
 
@@ -144,8 +151,8 @@ async function handleConnectRequest(): Promise<BackgroundResponse> {
     };
   }
 
-  // Multiple addresses - show popup for selection
-  console.log('Background: Multiple addresses, showing selector popup');
+  // Multiple addresses — show popup for selection (cross-platform)
+  console.log('Background: Multiple addresses, triggering selector popup');
   return new Promise((resolve) => {
     pendingConnectionRequest = {
       resolve: (address: string) => {
@@ -168,61 +175,99 @@ async function handleConnectRequest(): Promise<BackgroundResponse> {
       },
     };
 
-    // Open popup to show address selector
+    // Open popup for address selection (works on desktop and mobile)
     openAddressSelector(config.addresses);
   });
 }
 
 /**
- * Open popup with address selector
+ * Open popup with address selector — cross-platform (desktop + Android)
+ *
+ * Fallback chain:
+ * 1. browser.windows.create({ type: 'popup' }) — desktop popup window
+ * 2. browser.tabs.create() — new tab (universal, including Firefox Android)
  */
 async function openAddressSelector(addresses: string[]) {
   try {
-    // Store addresses temporarily for popup to read
-    await browser.storage.local.set({ pendingAddresses: addresses });
-
-    // Open popup window (wider for better UX)
-    const window = await browser.windows.create({
-      url: browser.runtime.getURL('popup/index.html?mode=selector'),
-      type: 'popup',
-      width: 420,
-      height: 600,
+    // Store pending state so the popup can detect selector mode on load
+    await browser.storage.local.set({
+      selectorPending: true,
+      pendingAddresses: addresses,
     });
 
-    // Track the popup window ID
-    popupWindowId = window.id ?? null;
+    // Method 1: Create a dedicated popup window (desktop only)
+    try {
+      const window = await browser.windows.create({
+        url: browser.runtime.getURL('popup/index.html?mode=selector'),
+        type: 'popup',
+        width: 420,
+        height: 600,
+      });
 
-    // Listen for window close
-    const handleWindowRemoved = (windowId: number) => {
-      if (windowId === popupWindowId && pendingConnectionRequest) {
-        console.log('Background: Popup closed without selection');
-        pendingConnectionRequest.reject();
-        pendingConnectionRequest = null;
-        popupWindowId = null;
-        browser.windows.onRemoved.removeListener(handleWindowRemoved);
-      }
-    };
+      popupWindowId = window.id ?? null;
+      console.log('Background: Popup window created, id:', popupWindowId);
 
-    browser.windows.onRemoved.addListener(handleWindowRemoved);
+      // Listen for window close
+      windowRemovedListener = (windowId: number) => {
+        if (windowId === popupWindowId && pendingConnectionRequest) {
+          console.log('Background: Popup window closed without selection');
+          pendingConnectionRequest.reject();
+          pendingConnectionRequest = null;
+          popupWindowId = null;
+          cleanupWindowListener();
+        }
+      };
 
-    // Also set a timeout in case the popup never responds
-    setTimeout(() => {
-      if (pendingConnectionRequest) {
-        console.log('Background: Selection timeout');
-        pendingConnectionRequest.reject();
-        pendingConnectionRequest = null;
-        popupWindowId = null;
-        browser.windows.onRemoved.removeListener(handleWindowRemoved);
-      }
-    }, 60000); // 1 minute timeout
+      browser.windows.onRemoved.addListener(windowRemovedListener);
+      setupSelectionTimeout();
+      return;
+    } catch (e) {
+      console.log('Background: windows.create() failed, trying tab fallback:', e);
+    }
+
+    // Method 2: Open in a new tab (works everywhere, including Firefox Android)
+    await browser.tabs.create({
+      url: browser.runtime.getURL('popup/index.html?mode=selector'),
+    });
+    console.log('Background: Selector opened in new tab');
+    setupSelectionTimeout();
   } catch (error) {
-    console.error('Failed to open address selector:', error);
-    // Reject pending request
+    console.error('Background: All popup opening methods failed:', error);
+    cleanupPendingSelector();
+  }
+}
+
+/**
+ * Remove the windows.onRemoved listener if it was registered
+ */
+function cleanupWindowListener() {
+  if (windowRemovedListener) {
+    browser.windows.onRemoved.removeListener(windowRemovedListener);
+    windowRemovedListener = null;
+  }
+}
+
+/**
+ * Set up timeout for pending selection
+ */
+function setupSelectionTimeout() {
+  setTimeout(() => {
     if (pendingConnectionRequest) {
+      console.log('Background: Selection timeout');
       pendingConnectionRequest.reject();
       pendingConnectionRequest = null;
+      popupWindowId = null;
+      cleanupWindowListener();
+      cleanupPendingSelector();
     }
-  }
+  }, 60000); // 1 minute timeout
+}
+
+/**
+ * Clean up pending selector state from storage
+ */
+async function cleanupPendingSelector() {
+  await browser.storage.local.remove(['selectorPending', 'pendingAddresses']);
 }
 
 /**

@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "ZeroConnectWallet",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "A read-only wallet extension that mimics MetaMask for connecting to DeFi apps without storing private keys.",
   "browser_specific_settings": {
     "gecko": {
@@ -10,6 +10,9 @@
       "data_collection_permissions": {
         "required": ["none"]
       }
+    },
+    "gecko_android": {
+      "strict_min_version": "120.0"
     }
   },
   "icons": {
@@ -24,6 +27,10 @@
     },
     "default_title": "ZeroConnectWallet",
     "default_popup": "popup/index.html"
+  },
+  "options_ui": {
+    "page": "popup/index.html",
+    "open_in_new_tab": true
   },
   "background": {
     "page": "background/background.html",

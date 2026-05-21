@@ -71,7 +71,7 @@ A: Yes! Since we never store private keys, your funds are safe even if the exten
 A: Use this for browsing and viewing. Use MetaMask for actual transactions. It's like having a "view-only" mode for your DeFi experience.
 
 **Q: Does this work with mobile Firefox?**  
-A: Currently desktop Firefox only. Firefox for Android support coming soon.
+A: Yes! Firefox for Android is supported. Install it from [addons.mozilla.org](https://addons.mozilla.org) on your Android device, or load it temporarily via `about:debugging` in Firefox Nightly for Android. The popup UI adapts to mobile screens, and address selection works inline within the popup.
 
 **Q: Can I import multiple addresses?**  
 A: Yes! Configure as many addresses as you want and switch between them.
@@ -84,11 +84,14 @@ For developers who want to build from source or contribute:
 # Install dependencies
 bun install
 
-# Run in development mode
+# Run in development mode (desktop)
 just dev
 
-# Build extension
-just build
+# Build and lint
+just ci
+
+# Test on Firefox for Android (requires connected device + adb)
+just dev-android
 
 # Create a release
 just ship

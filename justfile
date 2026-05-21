@@ -89,9 +89,60 @@ setup:
 dev:
     bunx vite build --watch
 
+# Type check, lint, and verify build
+ci:
+    bunx tsc --noEmit
+    bunx biome check .
+    rm -rf dist
+    bunx vite build
+    bunx web-ext lint --source-dir ./dist
+
+# Lint extension manifest for compatibility
+lint:
+    bunx vite build
+    bunx web-ext lint --source-dir ./dist
+
+# Run on connected Android device (auto-selects first device via adb)
+# See: https://extensionworkshop.com/documentation/develop/developing-extensions-for-firefox-for-android/
+dev-android:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check adb is available
+    if ! command -v adb &> /dev/null; then
+        echo "❌ adb not found. Install Android platform-tools:"
+        echo "   brew install android-platform-tools"
+        exit 1
+    fi
+
+    # Find first connected Android device
+    device_id=$(adb devices | tail -n +2 | grep -v '^$' | awk '{print $1}' | head -n 1)
+
+    if [ -z "$device_id" ]; then
+        echo "❌ No Android device found via adb."
+        echo ""
+        echo "Make sure:"
+        echo "   1. Your phone is connected via USB"
+        echo "   2. USB Debugging is enabled (Settings → Developer Options → USB Debugging)"
+        echo "   3. You've accepted the USB debugging prompt on your phone"
+        echo ""
+        echo "Run 'adb devices' to verify."
+        exit 1
+    fi
+
+    echo "📱 Auto-selected Android device: $device_id"
+    echo ""
+
+    bunx vite build
+    bunx web-ext run \
+        --source-dir ./dist \
+        --target=firefox-android \
+        --android-device="$device_id" \
+        --firefox-apk=org.mozilla.firefox
+
 # Clean build artifacts
 clean:
-    rm -rf dist *.xpi source-code.zip
+    rm -rf dist *.xpi source-code.zip web-ext-artifacts/
 
 # Fetch signed XPI from Mozilla and upload to GitHub
 # Run this after you get the approval email

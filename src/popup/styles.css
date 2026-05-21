@@ -1,6 +1,7 @@
 /**
  * ZeroConnectWallet Popup Styles
  * Clean, minimal design with dark mode support
+ * Responsive: works on desktop popups and mobile screens
  */
 
 /* Reset & Base */
@@ -65,14 +66,30 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
-  min-width: 380px;
+  width: 100%;
   max-width: 420px;
   min-height: 600px;
+  margin: 0 auto;
+}
+
+/* Mobile: full viewport, no artificial max-width constraint */
+@media (max-width: 480px) {
+  body {
+    max-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh; /* dynamic viewport height for mobile browsers */
+    margin: 0;
+  }
+
+  html {
+    font-size: 16px; /* prevent iOS zoom on inputs (also helps Android readability) */
+  }
 }
 
 /* Layout */
 #app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -105,6 +122,12 @@ body {
 .subtitle {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.security-badge {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -155,6 +178,7 @@ body {
   border-radius: 50%;
   background: var(--error);
   animation: pulse 2s infinite;
+  flex-shrink: 0;
 }
 
 .status-indicator.connected .status-dot {
@@ -205,6 +229,7 @@ body {
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 48px; /* adequate touch target */
 }
 
 .address-item:hover {
@@ -233,6 +258,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .address-item.selected .select-indicator {
@@ -310,6 +336,7 @@ body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 44px; /* adequate touch target */
 }
 
 .btn-primary {
@@ -334,6 +361,13 @@ body {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Mobile: stack buttons on very narrow screens */
+@media (max-width: 360px) {
+  .actions {
+    flex-direction: column;
+  }
 }
 
 /* Footer */
