@@ -20,11 +20,14 @@ bun install
 # Run in watch mode
 just dev
 
-# Type check and lint
+# Type check, lint, and build
 just ci
 
-# Build and package
-just package
+# Build unsigned XPI for distribution
+just build-xpi
+
+# Create GitHub release (maintainers only)
+just release
 ```
 
 ## Code Style
@@ -37,10 +40,15 @@ just package
 ## Testing
 
 Test your changes by loading the extension temporarily:
-1. Build: `just build`
+1. Build: `just build-xpi`
 2. Go to `about:debugging` in Firefox
 3. "This Firefox" → "Load Temporary Add-on"
 4. Select `dist/manifest.json`
+
+Or test on Firefox for Android:
+1. Connect your Android device via USB with debugging enabled
+2. Run: `just dev-android`
+3. The extension will load temporarily in Firefox for Android
 
 ## Submitting Changes
 
@@ -57,6 +65,7 @@ Test your changes by loading the extension temporarily:
 - Documentation improvements
 - Support for additional chains (with good rationale)
 - UI/UX improvements
+- Mobile/responsive design improvements
 
 ## What We're NOT Looking For
 
@@ -64,6 +73,7 @@ Test your changes by loading the extension temporarily:
 - Complex wallet management features
 - Changes that break read-only nature
 - External dependencies (keep it lightweight)
+- Attempts to circumvent Mozilla's AMO ban (e.g., creating new extension IDs, rebranding to sneak past review)
 
 ## Questions?
 
